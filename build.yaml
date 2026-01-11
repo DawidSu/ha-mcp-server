@@ -9,5 +9,4 @@ labels:
   org.opencontainers.image.description: "MCP Server für direkten Claude Zugriff auf Home Assistant Konfigurationen"
   org.opencontainers.image.source: "https://github.com/DawidSu/ha-mcp-server"
   org.opencontainers.image.licenses: "MIT"
-args:
-  BASHIO_VERSION: "v0.16.2"
+# bashio ist bereits im Base Image verfügbar
