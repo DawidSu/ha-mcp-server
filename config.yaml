@@ -1,0 +1,30 @@
+name: Claude MCP Server
+version: "1.0.0"
+slug: claude-mcp-server
+description: MCP Server für direkten Claude Zugriff auf Home Assistant Konfigurationen
+url: https://github.com/DawidSu/ha-mcp-server
+arch:
+  - armhf
+  - armv7
+  - aarch64
+  - amd64
+  - i386
+startup: services
+boot: manual
+init: false
+ports:
+  3000/tcp: 3000
+ports_description:
+  3000/tcp: MCP Server Port
+map:
+  - config:rw
+  - ssl:ro
+options:
+  ha_config_path: "/config"
+  log_level: "info"
+  enable_ssl: false
+schema:
+  ha_config_path: str
+  log_level: list(debug|info|warning|error)?
+  enable_ssl: bool?
+image: ghcr.io/{arch}-addon-claude-mcp-server

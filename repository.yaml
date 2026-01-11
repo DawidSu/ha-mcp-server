@@ -1,0 +1,4 @@
+# Home Assistant Add-on Repository
+name: Claude MCP Server Add-ons
+url: https://github.com/DawidSu/ha-mcp-server
+maintainer: DawidSu

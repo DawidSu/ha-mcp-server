@@ -1,23 +1,22 @@
-FROM node:20-alpine
+ARG BUILD_FROM
+FROM $BUILD_FROM
 
-# Install necessary packages
-RUN apk add --no-cache git
+# Set shell
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-# Create app directory
-WORKDIR /app
+# Install Node.js and npm
+RUN \
+    apk add --no-cache \
+        nodejs \
+        npm \
+        git \
+    && npm install -g @modelcontextprotocol/server-filesystem
 
-# Install MCP server for filesystem access
-RUN npm install -g @modelcontextprotocol/server-filesystem
+# Copy run script
+COPY run.sh /
+RUN chmod a+x /run.sh
 
-# Create a startup script
-COPY entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
-
-# Expose MCP server port
+# Expose port
 EXPOSE 3000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD node -e "require('net').connect(3000, 'localhost')" || exit 1
-
-ENTRYPOINT ["/app/entrypoint.sh"]
+CMD [ "/run.sh" ]
