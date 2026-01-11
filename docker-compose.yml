@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  ha-mcp-server:
+    build: .
+    container_name: homeassistant-mcp-server
+    restart: unless-stopped
+    
+    # Mount your Home Assistant config directory
+    volumes:
+      # WICHTIG: Passe diesen Pfad an deinen HA-Config-Ordner an
+      # Beispiele:
+      # - /home/user/homeassistant:/config  # Für Standard-Installation
+      # - ./config:/config                   # Für lokales Testing
+      - ${HA_CONFIG_PATH:-./config}:/config:rw
+    
+    # Network configuration
+    ports:
+      - "3000:3000"
+    
+    # Optional: Connect to Home Assistant network
+    # network_mode: "host"  # Uncomment if you need host network access
+    
+    environment:
+      - HA_CONFIG_PATH=/config
+      - NODE_ENV=production
+    
+    # Resource limits (optional but recommended)
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# Optional: Shared network with Home Assistant
+# networks:
+#   default:
+#     external:
+#       name: homeassistant_network
