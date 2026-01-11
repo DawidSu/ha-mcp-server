@@ -1,0 +1,23 @@
+# Environment files
+.env
+
+# Test config directory
+test-config/
+config/
+
+# Docker
+*.log
+
+# Backups
+*-backup-*/
+backup/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
