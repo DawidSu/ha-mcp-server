@@ -196,6 +196,15 @@ Sobald Claude mit deinem HA verbunden ist, kannst du z.B. fragen:
 ## 🐛 Troubleshooting
 
 ### Installation schlägt fehl
+
+**Error: "DockerError(403, 'denied')" oder "Can't install image"**  
+**Ursache:** Home Assistant baut das Addon lokal und benötigt die Build-Dateien  
+**Lösung:**
+1. **Repository Reload:** **Add-on Store** → **⋮** → **Reload**
+2. **Installation:** Das Addon wird beim ersten Installationsversuch lokal gebaut (dauert 5-10 Minuten)
+3. **Geduld haben:** Der Build-Prozess läuft im Hintergrund
+4. **Build-Status:** Prüfe `ha supervisor logs` für Build-Progress
+
 **Error: "An unknown error occurred with addon..."**  
 **Lösung:**
 1. **Repository aktualisieren:** Gehe zu **Add-on Store** → **⋮** → **Reload**
