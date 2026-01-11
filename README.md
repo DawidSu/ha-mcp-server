@@ -1,6 +1,6 @@
 # Home Assistant MCP Server für Claude
 
-Dieser Docker-Container stellt einen MCP (Model Context Protocol) Server bereit, der Claude direkten Zugriff auf deine Home Assistant Konfigurationsdateien gibt.
+Dieses Projekt stellt einen MCP (Model Context Protocol) Server bereit, der Claude direkten Zugriff auf deine Home Assistant Konfigurationsdateien ermöglicht.
 
 ## 🎯 Was kann Claude damit machen?
 
@@ -12,14 +12,41 @@ Dieser Docker-Container stellt einen MCP (Model Context Protocol) Server bereit,
 - ✅ Fehler in Configs finden und beheben
 - ✅ Neue Integrationen konfigurieren
 
-## 📋 Voraussetzungen
+## 🏠 Installation als Home Assistant Addon (Empfohlen)
+
+### ⚡ Schnellinstallation
+
+1. **Addon Repository hinzufügen:**
+   - Gehe zu **Einstellungen** → **Add-ons** → **Add-on Store**
+   - Klicke auf **⋮** → **Repositories**
+   - Füge hinzu: `https://github.com/DawidSu/ha-mcp-server`
+
+2. **Addon installieren:**
+   - Suche nach "Claude MCP Server"
+   - Klicke **Installieren** → **Starten**
+
+3. **Claude Desktop konfigurieren:**
+   - Siehe [Addon-Dokumentation](DOCS.md) für Details
+
+**✅ Vorteile des Addons:**
+- ✅ Einfache Installation über Home Assistant UI
+- ✅ Automatisches Update-Management
+- ✅ Integrierte Logs und Monitoring
+- ✅ Keine Docker-Kenntnisse erforderlich
+- ✅ Läuft nativ in Home Assistant
+
+---
+
+## 🐳 Alternative: Docker Installation
+
+**Nur verwenden wenn das Addon nicht funktioniert**
+
+### 📋 Voraussetzungen für Docker
 
 - Docker und Docker Compose installiert
 - Home Assistant läuft (egal ob als Docker, HAOS, oder Core Installation)
 - Zugriff auf das Home Assistant Config-Verzeichnis
-- Claude Desktop App ODER Anthropic API Key
-
-## 🚀 Installation
+- Claude Desktop App
 
 ### Schritt 1: Repository klonen oder Dateien herunterladen
 

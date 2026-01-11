@@ -27,4 +27,24 @@ export LOG_LEVEL="${LOG_LEVEL}"
 # Start the MCP filesystem server
 bashio::log.info "Starting MCP Filesystem Server on port 3000..."
 
-exec npx -y @modelcontextprotocol/server-filesystem "${CONFIG_PATH}" --port 3000
+# List some key files to verify access
+bashio::log.info "Verifying file access..."
+if [ -f "${CONFIG_PATH}/configuration.yaml" ]; then
+    bashio::log.info "✓ Found configuration.yaml"
+else
+    bashio::log.warning "⚠ configuration.yaml not found - this might be normal for new installations"
+fi
+
+if [ -d "${CONFIG_PATH}/automations" ] || [ -f "${CONFIG_PATH}/automations.yaml" ]; then
+    bashio::log.info "✓ Found automations"
+fi
+
+if [ -d "${CONFIG_PATH}/scripts" ] || [ -f "${CONFIG_PATH}/scripts.yaml" ]; then
+    bashio::log.info "✓ Found scripts"
+fi
+
+# Start the MCP filesystem server
+bashio::log.info "Starting MCP Filesystem Server on port 3000..."
+bashio::log.info "Claude can now access your Home Assistant configuration!"
+
+exec npx -y @modelcontextprotocol/server-filesystem "${CONFIG_PATH}"

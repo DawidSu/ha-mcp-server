@@ -27,4 +27,4 @@ schema:
   ha_config_path: str
   log_level: list(debug|info|warning|error)?
   enable_ssl: bool?
-image: ghcr.io/{arch}-addon-claude-mcp-server
+image: ghcr.io/dawid-su/addon-claude-mcp-server-{arch}
