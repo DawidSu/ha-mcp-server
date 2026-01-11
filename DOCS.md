@@ -195,6 +195,14 @@ Sobald Claude mit deinem HA verbunden ist, kannst du z.B. fragen:
 
 ## 🐛 Troubleshooting
 
+### Installation schlägt fehl
+**Error: "An unknown error occurred with addon..."**  
+**Lösung:**
+1. **Repository aktualisieren:** Gehe zu **Add-on Store** → **⋮** → **Reload**
+2. **Cache löschen:** Neustart von Home Assistant
+3. **Alternative:** Addon Repository entfernen und wieder hinzufügen
+4. **Logs prüfen:** `ha supervisor logs` für Details
+
 ### Addon startet nicht
 **Symptome:** Status bleibt auf "Stopped" oder "Error"  
 **Lösungsschritte:**
