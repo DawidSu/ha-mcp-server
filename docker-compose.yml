@@ -77,6 +77,33 @@ services:
         max-size: "5m"
         max-file: "2"
   
+  # Web Dashboard
+  dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
+    container_name: mcp-dashboard
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+      - "3000:3000"  # API port
+    volumes:
+      - ./scripts:/opt/scripts:ro
+      - ./logs:/var/log:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - DASHBOARD_PORT=3000
+      - FRONTEND_PORT=3001
+      - MCP_SERVER_URL=http://ha-mcp-server:3000
+      - NODE_ENV=production
+    depends_on:
+      - ha-mcp-server
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   # Log aggregation (optional)
   log-aggregator:
     image: alpine:latest

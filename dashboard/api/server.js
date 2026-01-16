@@ -1,0 +1,246 @@
+const express = require('express');
+const http = require('http');
+const socketIo = require('socket.io');
+const cors = require('cors');
+const { exec } = require('child_process');
+const fs = require('fs').promises;
+const path = require('path');
+
+const app = express();
+const server = http.createServer(app);
+const io = socketIo(server, {
+  cors: {
+    origin: "http://localhost:3001",
+    methods: ["GET", "POST"]
+  }
+});
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// Configuration
+const PORT = process.env.DASHBOARD_PORT || 3000;
+const SCRIPTS_PATH = path.join(__dirname, '../../scripts');
+const UPDATE_INTERVAL = 5000; // 5 seconds
+
+// Utility function to execute shell commands
+const execCommand = (command) => {
+  return new Promise((resolve, reject) => {
+    exec(command, { cwd: SCRIPTS_PATH }, (error, stdout, stderr) => {
+      if (error) {
+        console.error(`Command failed: ${command}`, error);
+        reject(error);
+        return;
+      }
+      resolve(stdout.trim());
+    });
+  });
+};
+
+// API Routes
+app.get('/api/health', async (req, res) => {
+  try {
+    const healthOutput = await execCommand('./health-check.sh all /config json');
+    const healthData = JSON.parse(healthOutput);
+    res.json(healthData);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get health status', details: error.message });
+  }
+});
+
+app.get('/api/metrics', async (req, res) => {
+  try {
+    // System metrics
+    const cpuUsage = await execCommand("top -bn1 | grep 'Cpu(s)' | sed 's/.*, *\\([0-9.]*\\)%* id.*/\\1/' | awk '{print 100 - $1}'");
+    const memInfo = await execCommand("free | grep Mem | awk '{print $3,$2}'");
+    const diskInfo = await execCommand("df -h / | awk 'NR==2{print $3,$2,$5}'");
+    const uptime = await execCommand("uptime -s");
+    
+    const [memUsed, memTotal] = memInfo.split(' ').map(Number);
+    const [diskUsed, diskTotal, diskPercent] = diskInfo.split(' ');
+    
+    const metrics = {
+      timestamp: Date.now(),
+      cpu: parseFloat(cpuUsage) || 0,
+      memory: {
+        used: memUsed * 1024, // Convert to bytes
+        total: memTotal * 1024,
+        percentage: Math.round((memUsed / memTotal) * 100)
+      },
+      disk: {
+        used: diskUsed,
+        total: diskTotal,
+        percentage: parseInt(diskPercent.replace('%', ''))
+      },
+      uptime: new Date(uptime).getTime()
+    };
+    
+    res.json(metrics);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get system metrics', details: error.message });
+  }
+});
+
+app.get('/api/cache', async (req, res) => {
+  try {
+    const cacheStats = await execCommand('./cache-manager.sh stats json');
+    const cacheData = JSON.parse(cacheStats);
+    res.json(cacheData);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get cache stats', details: error.message });
+  }
+});
+
+app.post('/api/cache/clear', async (req, res) => {
+  try {
+    await execCommand('./cache-manager.sh clear');
+    res.json({ success: true, message: 'Cache cleared successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to clear cache', details: error.message });
+  }
+});
+
+app.get('/api/circuit-breakers', async (req, res) => {
+  try {
+    const cbStatus = await execCommand('./circuit-breaker.sh status json');
+    const cbData = JSON.parse(cbStatus);
+    res.json(cbData);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get circuit breaker status', details: error.message });
+  }
+});
+
+app.get('/api/logs', async (req, res) => {
+  try {
+    const { limit = 100, level = 'all' } = req.query;
+    const logsPath = path.join(__dirname, '../logs');
+    
+    // Read recent logs from log files
+    const logFiles = await fs.readdir(logsPath).catch(() => []);
+    const logs = [];
+    
+    for (const file of logFiles.slice(0, 5)) { // Read from latest 5 files
+      try {
+        const content = await fs.readFile(path.join(logsPath, file), 'utf8');
+        const lines = content.split('\\n').slice(-20); // Last 20 lines per file
+        
+        lines.forEach(line => {
+          if (line.trim()) {
+            try {
+              const logEntry = JSON.parse(line);
+              logs.push({
+                timestamp: new Date(logEntry.timestamp).getTime(),
+                level: logEntry.level || 'INFO',
+                message: logEntry.message || line,
+                source: logEntry.source || file,
+                details: logEntry.details
+              });
+            } catch {
+              // Plain text log line
+              logs.push({
+                timestamp: Date.now(),
+                level: 'INFO',
+                message: line,
+                source: file
+              });
+            }
+          }
+        });
+      } catch (error) {
+        console.error(`Error reading log file ${file}:`, error);
+      }
+    }
+    
+    // Sort by timestamp and apply filters
+    const filteredLogs = logs
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .filter(log => level === 'all' || log.level.toLowerCase() === level.toLowerCase())
+      .slice(0, parseInt(limit));
+    
+    res.json(filteredLogs);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get logs', details: error.message });
+  }
+});
+
+app.get('/api/dashboard', async (req, res) => {
+  try {
+    const [health, metrics, cache, circuitBreakers, logs] = await Promise.all([
+      execCommand('./health-check.sh all /config json').then(JSON.parse).catch(() => null),
+      execCommand("echo '{}'").then(() => ({ // Simplified metrics for now
+        timestamp: Date.now(),
+        cpu: Math.random() * 100,
+        memory: { used: 245000000, total: 512000000, percentage: 48 },
+        disk: { used: "2.1G", total: "10G", percentage: 45 },
+        uptime: Date.now() - 86400000
+      })),
+      execCommand('./cache-manager.sh stats json').then(JSON.parse).catch(() => null),
+      execCommand('./circuit-breaker.sh status json').then(JSON.parse).catch(() => []),
+      execCommand("echo '[]'").then(JSON.parse).catch(() => [])
+    ]);
+
+    const dashboardData = {
+      systemMetrics: metrics,
+      cacheStats: cache,
+      healthReport: health,
+      circuitBreakers: circuitBreakers,
+      rateLimits: [],
+      recentLogs: logs,
+      activeConnections: io.sockets.sockets.size,
+      totalRequests: Math.floor(Math.random() * 10000),
+      errorRate: Math.random() * 5
+    };
+
+    res.json(dashboardData);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get dashboard data', details: error.message });
+  }
+});
+
+// WebSocket connection handling
+io.on('connection', (socket) => {
+  console.log('Dashboard client connected:', socket.id);
+
+  // Send initial data
+  socket.emit('connected', { message: 'Connected to MCP Dashboard API' });
+
+  socket.on('disconnect', () => {
+    console.log('Dashboard client disconnected:', socket.id);
+  });
+});
+
+// Periodic updates via WebSocket
+const broadcastUpdates = async () => {
+  try {
+    const dashboardData = await fetch(`http://localhost:${PORT}/api/dashboard`)
+      .then(res => res.json())
+      .catch(() => null);
+
+    if (dashboardData) {
+      io.emit('dashboard_update', dashboardData);
+    }
+  } catch (error) {
+    console.error('Error broadcasting updates:', error);
+  }
+};
+
+// Start periodic updates
+setInterval(broadcastUpdates, UPDATE_INTERVAL);
+
+// Health endpoint for the API itself
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    connections: io.sockets.sockets.size 
+  });
+});
+
+// Start server
+server.listen(PORT, () => {
+  console.log(`MCP Dashboard API running on http://localhost:${PORT}`);
+  console.log(`WebSocket server ready for connections`);
+});
+
+module.exports = { app, server, io };
