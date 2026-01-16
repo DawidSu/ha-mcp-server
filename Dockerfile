@@ -1,3 +1,6 @@
+# Build arguments
+ARG BUILD_FROM
+
 # Multi-stage build for optimized image size
 FROM node:18-alpine AS builder
 
@@ -6,7 +9,6 @@ WORKDIR /app
 RUN npm install -g @modelcontextprotocol/server-filesystem --only=production
 
 # Production stage
-ARG BUILD_FROM
 FROM $BUILD_FROM
 
 # Install minimal dependencies
