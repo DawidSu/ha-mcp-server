@@ -23,8 +23,12 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Serve a simple dashboard page for now
+// Serve a simple dashboard page for both root and /dashboard
 app.get('/', (req, res) => {
+  res.redirect('/dashboard');
+});
+
+app.get('/dashboard', (req, res) => {
   res.send(`
     <html>
       <head><title>HA MCP Dashboard</title></head>
