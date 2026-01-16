@@ -15,8 +15,21 @@ RUN apk add --no-cache \
         procps \
     && rm -rf /var/cache/apk/*
 
-# Install Node.js and NPM, then install MCP server directly
-RUN npm install -g @modelcontextprotocol/server-filesystem
+# Create non-root user for security first
+RUN addgroup -g 1000 mcpuser && \
+    adduser -D -s /bin/bash -u 1000 -G mcpuser mcpuser
+
+# Create NPM directory with correct permissions
+RUN mkdir -p /home/mcpuser/.npm && \
+    chown -R mcpuser:mcpuser /home/mcpuser/.npm
+
+# Install MCP server as mcpuser
+USER mcpuser
+RUN npm config set prefix '/home/mcpuser/.npm-global' && \
+    npm install -g @modelcontextprotocol/server-filesystem
+
+# Switch back to root for remaining setup
+USER root
 
 # Copy scripts and configuration
 COPY scripts/ /opt/scripts/
@@ -26,13 +39,13 @@ COPY entrypoint.sh /entrypoint.sh
 # Set permissions
 RUN chmod +x /run.sh /entrypoint.sh /opt/scripts/*.sh
 
-# Create non-root user for security
-RUN addgroup -g 1000 mcpuser && \
-    adduser -D -s /bin/bash -u 1000 -G mcpuser mcpuser
-
 # Create necessary directories
 RUN mkdir -p /var/log /tmp/mcp-cache && \
-    chown -R mcpuser:mcpuser /var/log /tmp/mcp-cache
+    chown -R mcpuser:mcpuser /var/log /tmp/mcp-cache && \
+    chown -R mcpuser:mcpuser /opt/scripts
+
+# Add npm-global to PATH
+ENV PATH="/home/mcpuser/.npm-global/bin:$PATH"
 
 # Build arugments
 ARG BUILD_ARCH
