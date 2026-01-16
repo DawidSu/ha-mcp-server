@@ -6,13 +6,16 @@ services:
     container_name: homeassistant-mcp-server
     restart: unless-stopped
     
-    # Mount your Home Assistant config directory
+    # Mount your Home Assistant config directory and scripts
     volumes:
       # WICHTIG: Passe diesen Pfad an deinen HA-Config-Ordner an
       # Beispiele:
       # - /home/user/homeassistant:/config  # Für Standard-Installation
       # - ./config:/config                   # Für lokales Testing
       - ${HA_CONFIG_PATH:-./config}:/config:rw
+      - ./scripts:/opt/scripts:ro
+      - ./logs:/var/log:rw
+      - /var/run/docker.sock:/var/run/docker.sock:ro  # For monitoring
     
     # Network configuration
     ports:
@@ -24,6 +27,9 @@ services:
     environment:
       - HA_CONFIG_PATH=/config
       - NODE_ENV=production
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - BACKUP_BEFORE_CHANGE=${BACKUP_BEFORE_CHANGE:-true}
+      - MAX_BACKUPS=${MAX_BACKUPS:-30}
     
     # Resource limits (optional but recommended)
     deploy:
@@ -41,6 +47,52 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "server-filesystem"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+  
+  # Monitoring service
+  mcp-monitor:
+    build: .
+    container_name: mcp-monitor
+    restart: unless-stopped
+    command: /opt/scripts/monitor.sh
+    volumes:
+      - ./scripts:/opt/scripts:ro
+      - ./logs:/var/log:rw
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - MONITOR_INTERVAL=${MONITOR_INTERVAL:-60}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    depends_on:
+      - ha-mcp-server
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+  
+  # Log aggregation (optional)
+  log-aggregator:
+    image: alpine:latest
+    container_name: mcp-log-aggregator
+    restart: unless-stopped
+    command: >
+      sh -c "
+        apk add --no-cache logrotate &&
+        while true; do
+          logrotate /etc/logrotate.d/mcp-logs
+          sleep 3600
+        done
+      "
+    volumes:
+      - ./logs:/var/log:rw
+      - ./scripts/logrotate.conf:/etc/logrotate.d/mcp-logs:ro
 
 # Optional: Shared network with Home Assistant
 # networks:

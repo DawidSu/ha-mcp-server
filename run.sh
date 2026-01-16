@@ -1,22 +1,41 @@
 #!/usr/bin/with-contenv bashio
+set -e
 
-# Get configuration from addon options
-CONFIG_PATH=$(bashio::config 'ha_config_path')
-LOG_LEVEL=$(bashio::config 'log_level')
+# Get configuration from addon options with validation
+CONFIG_PATH=$(bashio::config 'ha_config_path' || echo "/config")
+LOG_LEVEL=$(bashio::config 'log_level' || echo "info")
 
-# Set defaults
-CONFIG_PATH=${CONFIG_PATH:-"/config"}
-LOG_LEVEL=${LOG_LEVEL:-"info"}
+# Validate log level
+case "${LOG_LEVEL}" in
+    debug|info|warning|error) ;;
+    *) 
+        bashio::log.warning "Invalid log level: ${LOG_LEVEL}, using 'info'"
+        LOG_LEVEL="info"
+        ;;
+esac
 
 # Log configuration
 bashio::log.info "Starting Claude MCP Server..."
 bashio::log.info "Home Assistant Config Path: ${CONFIG_PATH}"
 bashio::log.info "Log Level: ${LOG_LEVEL}"
 
-# Check if config directory exists
+# Enhanced directory validation
 if [ ! -d "${CONFIG_PATH}" ]; then
     bashio::log.error "Config directory not found: ${CONFIG_PATH}"
     bashio::log.error "Please ensure Home Assistant config is properly mounted"
+    
+    # Try to provide helpful debugging info
+    bashio::log.info "Available directories:"
+    ls -la /config/ 2>/dev/null || bashio::log.error "Cannot list /config directory"
+    ls -la / 2>/dev/null | grep config || bashio::log.error "No config directories found"
+    exit 1
+fi
+
+# Check read permissions
+if [ ! -r "${CONFIG_PATH}" ]; then
+    bashio::log.error "Config directory is not readable: ${CONFIG_PATH}"
+    bashio::log.error "Permission issue detected. Current user: $(whoami)"
+    ls -ld "${CONFIG_PATH}" || true
     exit 1
 fi
 
@@ -43,8 +62,17 @@ if [ -d "${CONFIG_PATH}/scripts" ] || [ -f "${CONFIG_PATH}/scripts.yaml" ]; then
     bashio::log.info "✓ Found scripts"
 fi
 
-# Start the MCP filesystem server
+# Function to handle signals for graceful shutdown
+trap 'bashio::log.info "Received shutdown signal, stopping MCP server..."; exit 0' SIGTERM SIGINT
+
+# Start the MCP filesystem server with monitoring
 bashio::log.info "Starting MCP Filesystem Server on port 3000..."
 bashio::log.info "Claude can now access your Home Assistant configuration!"
+bashio::log.info "Press Ctrl+C to stop the server"
 
-exec npx -y @modelcontextprotocol/server-filesystem "${CONFIG_PATH}"
+# Start server with error handling
+if ! exec npx -y @modelcontextprotocol/server-filesystem "${CONFIG_PATH}"; then
+    bashio::log.error "MCP server failed to start or crashed"
+    bashio::log.error "Check the logs above for more details"
+    exit 1
+fi

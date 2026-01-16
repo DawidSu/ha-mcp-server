@@ -41,4 +41,8 @@ LABEL \
     org.opencontainers.image.revision="${BUILD_REF}" \
     org.opencontainers.image.version="${BUILD_VERSION}"
 
+# Health check to ensure the MCP server is running
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD pgrep -f "server-filesystem" || exit 1
+
 CMD [ "/run.sh" ]

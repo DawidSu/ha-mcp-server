@@ -1,0 +1,59 @@
+name: Home Assistant Addon Release
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'config.yaml'
+      - 'Dockerfile'
+      - 'build.yaml'
+      - 'run.sh'
+  release:
+    types: [published]
+
+jobs:
+  build-addon:
+    name: Build HA Addon
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [aarch64, amd64, armhf, armv7, i386]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build addon for ${{ matrix.arch }}
+        uses: home-assistant/builder@master
+        with:
+          args: |
+            --${{ matrix.arch }} \
+            --target /data \
+            --addon
+
+  publish-repository:
+    name: Publish Repository Info
+    runs-on: ubuntu-latest
+    needs: build-addon
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Update repository.yaml
+        run: |
+          # Update version in repository.yaml if needed
+          echo "Repository updated at $(date)" >> repository.yaml
+          
+      - name: Commit changes
+        if: github.event_name == 'release'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add repository.yaml
+          git diff --staged --quiet || git commit -m "Update repository.yaml for release ${{ github.ref_name }}"
+          git push
