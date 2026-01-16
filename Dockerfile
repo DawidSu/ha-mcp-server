@@ -1,16 +1,44 @@
+# Multi-stage build for optimized image size
+FROM node:18-alpine AS builder
+
+# Install MCP server in builder stage
+WORKDIR /app
+RUN npm install -g @modelcontextprotocol/server-filesystem --only=production
+
+# Production stage
 ARG BUILD_FROM
 FROM $BUILD_FROM
 
-# Install Node.js and npm
-RUN \
-    apk add --no-cache \
+# Install minimal dependencies
+RUN apk add --no-cache \
         nodejs \
         npm \
-    && npm install -g @modelcontextprotocol/server-filesystem
+        bash \
+        python3 \
+        py3-yaml \
+        curl \
+        procps \
+    && rm -rf /var/cache/apk/*
 
-# Copy run script
-COPY run.sh /
-RUN chmod a+x /run.sh
+# Copy Node.js modules from builder stage
+COPY --from=builder /usr/local/lib/node_modules /usr/local/lib/node_modules
+COPY --from=builder /usr/local/bin/npx /usr/local/bin/npx
+
+# Copy scripts and configuration
+COPY scripts/ /opt/scripts/
+COPY run.sh /run.sh
+COPY entrypoint.sh /entrypoint.sh
+
+# Set permissions
+RUN chmod +x /run.sh /entrypoint.sh /opt/scripts/*.sh
+
+# Create non-root user for security
+RUN addgroup -g 1000 mcpuser && \
+    adduser -D -s /bin/bash -u 1000 -G mcpuser mcpuser
+
+# Create necessary directories
+RUN mkdir -p /var/log /tmp/mcp-cache && \
+    chown -R mcpuser:mcpuser /var/log /tmp/mcp-cache
 
 # Build arugments
 ARG BUILD_ARCH
@@ -41,8 +69,14 @@ LABEL \
     org.opencontainers.image.revision="${BUILD_REF}" \
     org.opencontainers.image.version="${BUILD_VERSION}"
 
-# Health check to ensure the MCP server is running
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD pgrep -f "server-filesystem" || exit 1
+# Improved health check using our health check script
+HEALTHCHECK --interval=30s --timeout=15s --start-period=10s --retries=3 \
+  CMD /opt/scripts/health-check.sh check mcp_process || exit 1
+
+# Switch to non-root user
+USER mcpuser
+
+# Set working directory
+WORKDIR /opt/scripts
 
 CMD [ "/run.sh" ]
