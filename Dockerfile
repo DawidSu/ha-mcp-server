@@ -19,14 +19,17 @@ RUN apk add --no-cache \
 RUN addgroup -g 1000 mcpuser && \
     adduser -D -s /bin/bash -u 1000 -G mcpuser mcpuser
 
-# Create NPM directory with correct permissions
-RUN mkdir -p /home/mcpuser/.npm && \
-    chown -R mcpuser:mcpuser /home/mcpuser/.npm
+# Create NPM directories with correct permissions
+RUN mkdir -p /home/mcpuser/.npm /home/mcpuser/.npm-global && \
+    chown -R mcpuser:mcpuser /home/mcpuser
 
-# Install MCP server as mcpuser
+# Install MCP server as mcpuser with clean environment
 USER mcpuser
-RUN npm config set prefix '/home/mcpuser/.npm-global' && \
-    npm install -g @modelcontextprotocol/server-filesystem
+ENV HOME=/home/mcpuser
+ENV NPM_CONFIG_PREFIX=/home/mcpuser/.npm-global
+ENV NPM_CONFIG_CACHE=/home/mcpuser/.npm
+ENV NPM_CONFIG_INIT_MODULE=/home/mcpuser/.npm/init.js
+RUN npm install -g @modelcontextprotocol/server-filesystem
 
 # Switch back to root for remaining setup
 USER root
