@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 # Structured logging functions for MCP Server
 # Provides JSON-formatted logs for better monitoring
 
@@ -79,23 +81,23 @@ log_structured() {
 
 # Convenience functions
 log_debug() {
-    [ $CURRENT_LOG_LEVEL -le $LOG_LEVEL_DEBUG ] && log_structured "DEBUG" "$1" "${2:-mcp-server}" "$3"
+    [ $CURRENT_LOG_LEVEL -le $LOG_LEVEL_DEBUG ] && log_structured "DEBUG" "$1" "${2:-mcp-server}" "${3:-}"
 }
 
 log_info() {
-    [ $CURRENT_LOG_LEVEL -le $LOG_LEVEL_INFO ] && log_structured "INFO" "$1" "${2:-mcp-server}" "$3"
+    [ $CURRENT_LOG_LEVEL -le $LOG_LEVEL_INFO ] && log_structured "INFO" "$1" "${2:-mcp-server}" "${3:-}"
 }
 
 log_warning() {
-    [ $CURRENT_LOG_LEVEL -le $LOG_LEVEL_WARNING ] && log_structured "WARNING" "$1" "${2:-mcp-server}" "$3"
+    [ $CURRENT_LOG_LEVEL -le $LOG_LEVEL_WARNING ] && log_structured "WARNING" "$1" "${2:-mcp-server}" "${3:-}"
 }
 
 log_error() {
-    [ $CURRENT_LOG_LEVEL -le $LOG_LEVEL_ERROR ] && log_structured "ERROR" "$1" "${2:-mcp-server}" "$3"
+    [ $CURRENT_LOG_LEVEL -le $LOG_LEVEL_ERROR ] && log_structured "ERROR" "$1" "${2:-mcp-server}" "${3:-}"
 }
 
 log_critical() {
-    [ $CURRENT_LOG_LEVEL -le $LOG_LEVEL_CRITICAL ] && log_structured "CRITICAL" "$1" "${2:-mcp-server}" "$3"
+    [ $CURRENT_LOG_LEVEL -le $LOG_LEVEL_CRITICAL ] && log_structured "CRITICAL" "$1" "${2:-mcp-server}" "${3:-}"
 }
 
 # Performance metrics logging
