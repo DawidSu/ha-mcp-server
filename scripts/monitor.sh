@@ -21,6 +21,12 @@ START_TIME=$(date +%s)
 
 # Function to collect Docker stats
 collect_docker_stats() {
+    # Check if docker command is available
+    if ! command -v docker >/dev/null 2>&1; then
+        log_debug "Docker command not available, skipping Docker stats collection"
+        return 0
+    fi
+    
     if docker ps --format "{{.Names}}" | grep -q "^${CONTAINER_NAME}$"; then
         local stats=$(docker stats --no-stream --format "json" "$CONTAINER_NAME" 2>/dev/null)
         

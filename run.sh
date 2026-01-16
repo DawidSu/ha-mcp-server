@@ -109,7 +109,8 @@ trap cleanup_on_exit SIGTERM SIGINT
 # Start background monitoring if available
 if [[ -f "/opt/scripts/monitor.sh" ]]; then
     bashio::log.info "Starting background monitoring"
-    /opt/scripts/monitor.sh &
+    # Start monitoring in background, suppress errors if Docker not available
+    (/opt/scripts/monitor.sh 2>/dev/null) &
 fi
 
 # Run initial health check
