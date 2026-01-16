@@ -23,25 +23,25 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Serve a simple dashboard page for both root and /dashboard
+// Serve a simple dashboard page for both root and /mcp-dashboard
 app.get('/', (req, res) => {
-  res.redirect('/dashboard');
+  res.redirect('/mcp-dashboard');
 });
 
-app.get('/dashboard', (req, res) => {
+app.get('/mcp-dashboard', (req, res) => {
   res.send(`
     <html>
-      <head><title>HA MCP Dashboard</title></head>
+      <head><title>Claude MCP Dashboard</title></head>
       <body>
-        <h1>Home Assistant MCP Server Dashboard</h1>
-        <p>Dashboard API is running!</p>
-        <h2>Available Endpoints:</h2>
+        <h1>Claude MCP Server Dashboard</h1>
+        <p>MCP Dashboard API is running!</p>
+        <h2>Available MCP Endpoints:</h2>
         <ul>
-          <li><a href="/api/health">/api/health</a> - System health</li>
-          <li><a href="/api/metrics">/api/metrics</a> - System metrics</li>
-          <li><a href="/api/cache">/api/cache</a> - Cache statistics</li>
-          <li><a href="/api/logs">/api/logs</a> - Recent logs</li>
-          <li><a href="/api/dashboard">/api/dashboard</a> - Complete dashboard data</li>
+          <li><a href="/api/health">/api/health</a> - MCP system health</li>
+          <li><a href="/api/metrics">/api/metrics</a> - MCP system metrics</li>
+          <li><a href="/api/cache">/api/cache</a> - MCP cache statistics</li>
+          <li><a href="/api/logs">/api/logs</a> - MCP server logs</li>
+          <li><a href="/api/dashboard">/api/dashboard</a> - Complete MCP dashboard data</li>
         </ul>
         <p>Status: <span id="status">Checking...</span></p>
         <script>

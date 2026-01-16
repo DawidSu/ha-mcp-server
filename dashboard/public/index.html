@@ -5,14 +5,14 @@
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
-    <meta name="description" content="Home Assistant MCP Server Dashboard" />
-    <title>HA MCP Server Dashboard</title>
+    <meta name="description" content="Claude MCP Server Dashboard" />
+    <title>Claude MCP Dashboard</title>
     <script>
       // Handle base URL for Ingress
-      if (window.location.pathname.startsWith('/dashboard')) {
+      if (window.location.pathname.startsWith('/mcp-dashboard')) {
         document.getElementsByTagName('base')[0]?.remove();
         const base = document.createElement('base');
-        base.href = '/dashboard/';
+        base.href = '/mcp-dashboard/';
         document.head.appendChild(base);
       }
     </script>
