@@ -134,9 +134,15 @@ keep_alive() {
     while true; do
         sleep 60
         # Check if MCP process is still running
-        if ! pgrep -f "server-filesystem" >/dev/null; then
-            bashio::log.error "MCP server process died - restarting"
-            exec "$0"
+        if ! pgrep -f "tcp-wrapper.js" >/dev/null; then
+            bashio::log.error "MCP server process died - restarting TCP wrapper"
+            # Kill any remaining processes on port 3000
+            pkill -f "tcp-wrapper.js" 2>/dev/null || true
+            sleep 2
+            # Restart TCP wrapper
+            MCP_PORT=3000 nohup node /opt/scripts/tcp-wrapper.js "${CONFIG_PATH}" >/tmp/mcp-server.log 2>&1 &
+            MCP_PID=$!
+            bashio::log.info "TCP wrapper restarted with PID: $MCP_PID"
         fi
     done
 }
@@ -172,15 +178,27 @@ bashio::log.info "MCP server started with PID: $MCP_PID"
 # Give server time to start and check logs
 sleep 5
 
-# Check if process is still running
-if kill -0 $MCP_PID 2>/dev/null; then
-    bashio::log.info "✓ MCP server is running"
+# Check if process is still running and port is listening
+if kill -0 $MCP_PID 2>/dev/null && netstat -ln 2>/dev/null | grep -q ":3000 "; then
+    bashio::log.info "✓ MCP TCP server is running and listening on port 3000"
     bashio::log.info "Server logs:"
     tail -n 10 /tmp/mcp-server.log 2>/dev/null || bashio::log.warning "No logs available yet"
-    keep_alive
+    
+    # Simple keep-alive loop without restart logic
+    bashio::log.info "MCP server ready - keeping container alive"
+    while kill -0 $MCP_PID 2>/dev/null; do
+        sleep 60
+    done
+    
+    bashio::log.error "MCP server process died"
+    exit 1
 else
-    bashio::log.error "✗ MCP server process died"
+    bashio::log.error "✗ MCP server failed to start or port not listening"
     bashio::log.error "Server logs:"
     cat /tmp/mcp-server.log 2>/dev/null || bashio::log.error "No logs available"
+    
+    # Check what's using port 3000
+    bashio::log.info "Checking port 3000 usage:"
+    netstat -tlnp 2>/dev/null | grep ":3000 " || bashio::log.info "Port 3000 not in use"
     exit 1
 fi
