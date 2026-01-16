@@ -141,25 +141,41 @@ keep_alive() {
     done
 }
 
-# Start server with circuit breaker protection  
-if command -v cb_execute >/dev/null 2>&1; then
-    # Start with circuit breaker protection in background
-    (cb_execute "mcp_server" "npx -y @modelcontextprotocol/server-filesystem '${CONFIG_PATH}'" > /dev/null 2>&1) &
-    MCP_PID=$!
-else
-    # Fallback without circuit breaker  
-    npx -y @modelcontextprotocol/server-filesystem "${CONFIG_PATH}" > /dev/null 2>&1 &
-    MCP_PID=$!
+# Test NPX and MCP package first
+bashio::log.info "Testing NPX and MCP package..."
+if ! which npx >/dev/null 2>&1; then
+    bashio::log.error "NPX not found in PATH"
+    exit 1
 fi
 
-# Give server time to start
-sleep 3
+if ! npm list -g @modelcontextprotocol/server-filesystem >/dev/null 2>&1; then
+    bashio::log.error "MCP server package not found"
+    npm list -g 2>&1 | head -10
+    exit 1
+fi
 
-# Check if server started successfully
+# Start MCP server directly without circuit breaker for debugging
+bashio::log.info "Starting MCP server directly..."
+bashio::log.info "Command: npx -y @modelcontextprotocol/server-filesystem ${CONFIG_PATH}"
+
+# Use nohup to properly daemonize
+nohup npx -y @modelcontextprotocol/server-filesystem "${CONFIG_PATH}" >/tmp/mcp-server.log 2>&1 &
+MCP_PID=$!
+
+bashio::log.info "MCP server started with PID: $MCP_PID"
+
+# Give server time to start and check logs
+sleep 5
+
+# Check if process is still running
 if kill -0 $MCP_PID 2>/dev/null; then
-    bashio::log.info "✓ MCP server running with PID: $MCP_PID"
+    bashio::log.info "✓ MCP server is running"
+    bashio::log.info "Server logs:"
+    tail -n 10 /tmp/mcp-server.log 2>/dev/null || bashio::log.warning "No logs available yet"
     keep_alive
 else
-    bashio::log.error "✗ MCP server failed to start"
+    bashio::log.error "✗ MCP server process died"
+    bashio::log.error "Server logs:"
+    cat /tmp/mcp-server.log 2>/dev/null || bashio::log.error "No logs available"
     exit 1
 fi
