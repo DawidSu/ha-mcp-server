@@ -154,12 +154,12 @@ if ! npm list -g @modelcontextprotocol/server-filesystem >/dev/null 2>&1; then
     exit 1
 fi
 
-# Start MCP server directly without circuit breaker for debugging
-bashio::log.info "Starting MCP server directly..."
-bashio::log.info "Command: npx -y @modelcontextprotocol/server-filesystem ${CONFIG_PATH}"
+# Start MCP server as TCP server on port 3000
+bashio::log.info "Starting MCP server as TCP server on port 3000..."
+bashio::log.info "Command: npx -y @modelcontextprotocol/server-filesystem ${CONFIG_PATH} --port 3000"
 
-# Use nohup to properly daemonize
-nohup npx -y @modelcontextprotocol/server-filesystem "${CONFIG_PATH}" >/tmp/mcp-server.log 2>&1 &
+# Use nohup to properly daemonize with TCP server
+nohup npx -y @modelcontextprotocol/server-filesystem "${CONFIG_PATH}" --port 3000 >/tmp/mcp-server.log 2>&1 &
 MCP_PID=$!
 
 bashio::log.info "MCP server started with PID: $MCP_PID"
