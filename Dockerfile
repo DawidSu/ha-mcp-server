@@ -1,13 +1,6 @@
 # Build arguments
 ARG BUILD_FROM
 
-# Multi-stage build for optimized image size
-FROM node:18-alpine AS builder
-
-# Install MCP server in builder stage
-WORKDIR /app
-RUN npm install -g @modelcontextprotocol/server-filesystem --only=production
-
 # Production stage
 FROM $BUILD_FROM
 
@@ -22,9 +15,8 @@ RUN apk add --no-cache \
         procps \
     && rm -rf /var/cache/apk/*
 
-# Copy Node.js modules from builder stage
-COPY --from=builder /usr/local/lib/node_modules /usr/local/lib/node_modules
-COPY --from=builder /usr/local/bin/npx /usr/local/bin/npx
+# Install Node.js and NPM, then install MCP server directly
+RUN npm install -g @modelcontextprotocol/server-filesystem
 
 # Copy scripts and configuration
 COPY scripts/ /opt/scripts/
