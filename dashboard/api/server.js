@@ -59,7 +59,7 @@ function getDashboardHTML() {
       </body>
     </html>
   `;
-});
+}
 
 // Configuration
 const PORT = process.env.DASHBOARD_PORT || 3001;  // Dashboard on 3001, MCP on 3000
