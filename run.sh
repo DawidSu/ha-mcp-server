@@ -5,6 +5,9 @@ set -e
 CONFIG_PATH=$(bashio::config 'ha_config_path' || echo "/config")
 LOG_LEVEL=$(bashio::config 'log_level' || echo "info")
 
+# Export log level for scripts
+export LOG_LEVEL
+
 # Validate log level
 case "${LOG_LEVEL}" in
     debug|info|warning|error) ;;
@@ -64,28 +67,49 @@ fi
 
 # Load security utilities if available
 if [[ -f "/opt/scripts/security-utils.sh" ]]; then
-    source "/opt/scripts/security-utils.sh"
-    bashio::log.info "Security utilities loaded"
-    
-    # Validate configuration path
-    if ! validate_config_path "${CONFIG_PATH}"; then
-        bashio::log.error "Invalid configuration path: ${CONFIG_PATH}"
-        exit 1
+    if source "/opt/scripts/security-utils.sh" 2>/dev/null; then
+        bashio::log.info "Security utilities loaded"
+        
+        # Validate configuration path if function exists
+        if command -v validate_config_path >/dev/null 2>&1; then
+            if ! validate_config_path "${CONFIG_PATH}" 2>/dev/null; then
+                bashio::log.warning "Configuration path validation failed: ${CONFIG_PATH}"
+                # Don't exit - continue anyway
+            fi
+        fi
+    else
+        bashio::log.warning "Failed to load security utilities - continuing without them"
     fi
 fi
 
 # Initialize caching if available
 if [[ -f "/opt/scripts/cache-manager.sh" ]]; then
-    source "/opt/scripts/cache-manager.sh"
-    cache_init
-    bashio::log.info "Cache system initialized"
+    if source "/opt/scripts/cache-manager.sh" 2>/dev/null; then
+        if command -v cache_init >/dev/null 2>&1; then
+            if cache_init 2>/dev/null; then
+                bashio::log.info "Cache system initialized"
+            else
+                bashio::log.warning "Cache initialization failed - continuing without cache"
+            fi
+        fi
+    else
+        bashio::log.warning "Failed to load cache utilities - continuing without them"
+    fi
 fi
 
 # Initialize circuit breakers if available
 if [[ -f "/opt/scripts/circuit-breaker.sh" ]]; then
-    source "/opt/scripts/circuit-breaker.sh"
-    cb_init "mcp_server"
-    bashio::log.info "Circuit breaker system initialized"
+    if source "/opt/scripts/circuit-breaker.sh" 2>/dev/null; then
+        if command -v cb_init >/dev/null 2>&1; then
+            if cb_init "mcp_server" 2>/dev/null; then
+                bashio::log.info "Circuit breaker system initialized"
+            else
+                bashio::log.warning "Circuit breaker initialization failed - continuing without it"
+            fi
+        fi
+    else
+        bashio::log.warning "Failed to load circuit breaker utilities - continuing without them"
+    fi
 fi
 
 # Function to handle signals for graceful shutdown
@@ -116,11 +140,36 @@ fi
 # Start Dashboard API on port 3001 if files exist
 if [[ -f "/dashboard/api/server.js" ]]; then
     bashio::log.info "Starting Dashboard API on port 3001..."
-    cd /dashboard/api
+    cd /dashboard/api || {
+        bashio::log.error "Failed to change to dashboard directory"
+        exit 1
+    }
+    
+    # Test node and dependencies first
+    if ! node --version >/dev/null 2>&1; then
+        bashio::log.error "Node.js not available"
+        exit 1
+    fi
+    
+    if ! ls node_modules >/dev/null 2>&1; then
+        bashio::log.warning "No node_modules found, dashboard may not work"
+    fi
+    
     nohup node server.js >/tmp/dashboard.log 2>&1 &
     DASHBOARD_PID=$!
     bashio::log.info "Dashboard API started with PID: $DASHBOARD_PID"
-    cd /
+    
+    # Give dashboard time to start
+    sleep 2
+    
+    # Check if still running
+    if ! kill -0 $DASHBOARD_PID 2>/dev/null; then
+        bashio::log.error "Dashboard API failed to start"
+        bashio::log.error "Dashboard logs:"
+        cat /tmp/dashboard.log 2>/dev/null || bashio::log.error "No dashboard logs"
+    fi
+    
+    cd / || true
 fi
 
 # Run initial health check
