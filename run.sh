@@ -128,18 +128,38 @@ bashio::log.info "Starting MCP Filesystem Server on port 3000..."
 bashio::log.info "Claude can now access your Home Assistant configuration!"
 bashio::log.info "Press Ctrl+C to stop the server"
 
-# Start server with circuit breaker protection
+# Function to keep container running
+keep_alive() {
+    bashio::log.info "MCP server is running in background - keeping container alive"
+    while true; do
+        sleep 60
+        # Check if MCP process is still running
+        if ! pgrep -f "server-filesystem" >/dev/null; then
+            bashio::log.error "MCP server process died - restarting"
+            exec "$0"
+        fi
+    done
+}
+
+# Start server with circuit breaker protection  
 if command -v cb_execute >/dev/null 2>&1; then
-    # Start with circuit breaker protection
-    if ! cb_execute "mcp_server" "npx -y @modelcontextprotocol/server-filesystem '${CONFIG_PATH}'"; then
-        bashio::log.error "MCP server failed to start or crashed (circuit breaker)"
-        exit 1
-    fi
+    # Start with circuit breaker protection in background
+    (cb_execute "mcp_server" "npx -y @modelcontextprotocol/server-filesystem '${CONFIG_PATH}'" > /dev/null 2>&1) &
+    MCP_PID=$!
 else
-    # Fallback without circuit breaker
-    if ! exec npx -y @modelcontextprotocol/server-filesystem "${CONFIG_PATH}"; then
-        bashio::log.error "MCP server failed to start or crashed"
-        bashio::log.error "Check the logs above for more details"
-        exit 1
-    fi
+    # Fallback without circuit breaker  
+    npx -y @modelcontextprotocol/server-filesystem "${CONFIG_PATH}" > /dev/null 2>&1 &
+    MCP_PID=$!
+fi
+
+# Give server time to start
+sleep 3
+
+# Check if server started successfully
+if kill -0 $MCP_PID 2>/dev/null; then
+    bashio::log.info "✓ MCP server running with PID: $MCP_PID"
+    keep_alive
+else
+    bashio::log.error "✗ MCP server failed to start"
+    exit 1
 fi
