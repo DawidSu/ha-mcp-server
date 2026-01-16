@@ -1,5 +1,5 @@
 name: Claude MCP Server
-version: "1.0.2"
+version: "1.1.0"
 slug: claude-mcp-server
 description: MCP Server für direkten Claude Zugriff auf Home Assistant Konfigurationen
 url: https://github.com/DawidSu/ha-mcp-server
@@ -15,8 +15,10 @@ init: false
 hassio_api: true
 ports:
   3000/tcp: 3000
+  3001/tcp: 3001
 ports_description:
   3000/tcp: MCP Server Port
+  3001/tcp: Web Dashboard Port
 map:
   - config:rw
 options:
