@@ -10,14 +10,24 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: "http://localhost:3001",
-    methods: ["GET", "POST"]
+    origin: ["http://localhost:3001", "https://homeassistant.local", /^https?:\/\/.*$/],
+    methods: ["GET", "POST"],
+    credentials: true
   }
 });
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: ["http://localhost:3001", "https://homeassistant.local", /^https?:\/\/.*$/],
+  credentials: true
+}));
 app.use(express.json());
+
+// Handle Ingress routing
+app.use('/dashboard', express.static(path.join(__dirname, '../frontend/build')));
+app.get('/dashboard/*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
+});
 
 // Configuration
 const PORT = process.env.DASHBOARD_PORT || 3000;

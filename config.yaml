@@ -13,12 +13,13 @@ startup: services
 boot: manual
 init: false
 hassio_api: true
+ingress: true
+ingress_port: 3001
+ingress_entry: "/dashboard"
 ports:
   3000/tcp: 3000
-  3001/tcp: 3001
 ports_description:
   3000/tcp: MCP Server Port
-  3001/tcp: Web Dashboard Port
 map:
   - config:rw
 options:

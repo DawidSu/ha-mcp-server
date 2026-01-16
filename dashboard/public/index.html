@@ -7,6 +7,15 @@
     <meta name="theme-color" content="#000000" />
     <meta name="description" content="Home Assistant MCP Server Dashboard" />
     <title>HA MCP Server Dashboard</title>
+    <script>
+      // Handle base URL for Ingress
+      if (window.location.pathname.startsWith('/dashboard')) {
+        document.getElementsByTagName('base')[0]?.remove();
+        const base = document.createElement('base');
+        base.href = '/dashboard/';
+        document.head.appendChild(base);
+      }
+    </script>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>

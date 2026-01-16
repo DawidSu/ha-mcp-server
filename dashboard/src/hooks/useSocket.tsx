@@ -32,10 +32,17 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
 
   useEffect(() => {
+    // Detect if running in Ingress mode
+    const isIngress = window.location.pathname.startsWith('/dashboard');
+    const socketUrl = isIngress 
+      ? `${window.location.protocol}//${window.location.host}`
+      : 'http://localhost:3000';
+    
     // Initialize socket connection
-    const newSocket = io('http://localhost:3000', {
+    const newSocket = io(socketUrl, {
       transports: ['websocket', 'polling'],
       autoConnect: true,
+      path: isIngress ? '/socket.io/' : '/socket.io/',
     });
 
     newSocket.on('connect', () => {
