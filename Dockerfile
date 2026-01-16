@@ -36,6 +36,7 @@ USER root
 
 # Copy scripts and configuration
 COPY scripts/ /opt/scripts/
+COPY tcp-wrapper.js /tcp-wrapper.js
 COPY run.sh /run.sh
 COPY entrypoint.sh /entrypoint.sh
 

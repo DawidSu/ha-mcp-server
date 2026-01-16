@@ -154,12 +154,17 @@ if ! npm list -g @modelcontextprotocol/server-filesystem >/dev/null 2>&1; then
     exit 1
 fi
 
-# Start MCP server as TCP server on port 3000
-bashio::log.info "Starting MCP server as TCP server on port 3000..."
-bashio::log.info "Command: npx -y @modelcontextprotocol/server-filesystem ${CONFIG_PATH} --port 3000"
+# Copy TCP wrapper to correct location
+if [ ! -f "/opt/scripts/tcp-wrapper.js" ]; then
+    cp /tcp-wrapper.js /opt/scripts/tcp-wrapper.js 2>/dev/null || true
+fi
 
-# Use nohup to properly daemonize with TCP server
-nohup npx -y @modelcontextprotocol/server-filesystem "${CONFIG_PATH}" --port 3000 >/tmp/mcp-server.log 2>&1 &
+# Start MCP server via TCP wrapper on port 3000
+bashio::log.info "Starting MCP TCP wrapper on port 3000..."
+bashio::log.info "Command: node /opt/scripts/tcp-wrapper.js ${CONFIG_PATH}"
+
+# Use nohup to properly daemonize with TCP wrapper
+MCP_PORT=3000 nohup node /opt/scripts/tcp-wrapper.js "${CONFIG_PATH}" >/tmp/mcp-server.log 2>&1 &
 MCP_PID=$!
 
 bashio::log.info "MCP server started with PID: $MCP_PID"
