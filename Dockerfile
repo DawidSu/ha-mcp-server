@@ -34,11 +34,21 @@ RUN npm install -g @modelcontextprotocol/server-filesystem
 # Switch back to root for remaining setup
 USER root
 
+# Install dashboard dependencies
+COPY dashboard/api/package.json /tmp/dashboard-api-package.json
+RUN cd /tmp && npm install express socket.io cors --production && \
+    mkdir -p /dashboard/api/node_modules && \
+    cp -r node_modules/* /dashboard/api/node_modules/ && \
+    rm -rf /tmp/node_modules /tmp/dashboard-api-package.json
+
 # Copy scripts and configuration
 COPY scripts/ /opt/scripts/
 COPY tcp-wrapper.js /tcp-wrapper.js
 COPY run.sh /run.sh
 COPY entrypoint.sh /entrypoint.sh
+
+# Copy dashboard files
+COPY dashboard/ /dashboard/
 
 # Set permissions
 RUN chmod +x /run.sh /entrypoint.sh /opt/scripts/*.sh

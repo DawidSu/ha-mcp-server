@@ -23,14 +23,37 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Handle Ingress routing
-app.use('/dashboard', express.static(path.join(__dirname, '../frontend/build')));
-app.get('/dashboard/*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
+// Serve a simple dashboard page for now
+app.get('/', (req, res) => {
+  res.send(`
+    <html>
+      <head><title>HA MCP Dashboard</title></head>
+      <body>
+        <h1>Home Assistant MCP Server Dashboard</h1>
+        <p>Dashboard API is running!</p>
+        <h2>Available Endpoints:</h2>
+        <ul>
+          <li><a href="/api/health">/api/health</a> - System health</li>
+          <li><a href="/api/metrics">/api/metrics</a> - System metrics</li>
+          <li><a href="/api/cache">/api/cache</a> - Cache statistics</li>
+          <li><a href="/api/logs">/api/logs</a> - Recent logs</li>
+          <li><a href="/api/dashboard">/api/dashboard</a> - Complete dashboard data</li>
+        </ul>
+        <p>Status: <span id="status">Checking...</span></p>
+        <script>
+          fetch('/api/health').then(r => r.json()).then(data => {
+            document.getElementById('status').textContent = data.overall_status || 'OK';
+          }).catch(e => {
+            document.getElementById('status').textContent = 'Error: ' + e.message;
+          });
+        </script>
+      </body>
+    </html>
+  `);
 });
 
 // Configuration
-const PORT = process.env.DASHBOARD_PORT || 3000;
+const PORT = process.env.DASHBOARD_PORT || 3001;  // Dashboard on 3001, MCP on 3000
 const SCRIPTS_PATH = path.join(__dirname, '../../scripts');
 const UPDATE_INTERVAL = 5000; // 5 seconds
 

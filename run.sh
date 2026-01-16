@@ -113,6 +113,16 @@ if [[ -f "/opt/scripts/monitor.sh" ]]; then
     (/opt/scripts/monitor.sh 2>/dev/null) &
 fi
 
+# Start Dashboard API on port 3001 if files exist
+if [[ -f "/dashboard/api/server.js" ]]; then
+    bashio::log.info "Starting Dashboard API on port 3001..."
+    cd /dashboard/api
+    nohup node server.js >/tmp/dashboard.log 2>&1 &
+    DASHBOARD_PID=$!
+    bashio::log.info "Dashboard API started with PID: $DASHBOARD_PID"
+    cd /
+fi
+
 # Run initial health check
 if [[ -f "/opt/scripts/health-check.sh" ]]; then
     bashio::log.info "Running initial health check..."
