@@ -23,13 +23,18 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Serve a simple dashboard page for both root and /mcp-dashboard
+// Serve dashboard directly on root for Ingress
 app.get('/', (req, res) => {
-  res.redirect('/mcp-dashboard');
+  res.send(getDashboardHTML());
 });
 
+// Also serve on /mcp-dashboard for backwards compatibility
 app.get('/mcp-dashboard', (req, res) => {
-  res.send(`
+  res.send(getDashboardHTML());
+});
+
+function getDashboardHTML() {
+  return `
     <html>
       <head><title>Claude MCP Dashboard</title></head>
       <body>
@@ -53,7 +58,7 @@ app.get('/mcp-dashboard', (req, res) => {
         </script>
       </body>
     </html>
-  `);
+  `;
 });
 
 // Configuration
