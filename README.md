@@ -2,6 +2,18 @@
 
 Dieses Projekt stellt einen MCP (Model Context Protocol) Server bereit, der Claude direkten Zugriff auf deine Home Assistant Konfigurationsdateien ermöglicht.
 
+## 🤖 Neu: Claude Code Web-Interface
+
+**Willst du Claude direkt in Home Assistant nutzen?** 
+Installiere zusätzlich das **[Claude Code Addon](https://github.com/DawidSu/ha-claude-code-addon)** für eine moderne Web-Chat-Oberfläche!
+
+- 🌐 **Web-Interface** direkt in Home Assistant
+- 📱 **Mobile-responsive** Design
+- ⚡ **Real-time Chat** mit Claude
+- 🔗 **Automatische MCP Integration**
+
+[![Claude Code Addon](https://img.shields.io/badge/Claude%20Code%20Addon-Install-blue?style=for-the-badge&logo=home-assistant)](https://github.com/DawidSu/ha-claude-code-addon)
+
 ## 🎯 Was kann Claude damit machen?
 
 - ✅ Automationen erstellen und bearbeiten
