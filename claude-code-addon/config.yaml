@@ -1,0 +1,43 @@
+name: Claude Code CLI
+version: "1.0.0"
+slug: claude-code-cli
+description: Claude Code CLI direkt in Home Assistant - Chat mit Claude über Web-Interface
+url: https://github.com/DawidSu/ha-mcp-server
+arch:
+  - armhf
+  - armv7
+  - aarch64
+  - amd64
+  - i386
+startup: services
+boot: manual
+init: false
+hassio_api: true
+hassio_role: manager
+ingress: true
+ingress_port: 8080
+panel_icon: mdi:robot
+panel_title: Claude Code
+ports:
+  8080/tcp: 8080
+ports_description:
+  8080/tcp: Claude Code Web Interface
+map:
+  - config:rw
+  - addons_local:rw
+options:
+  anthropic_api_key: ""
+  model: "claude-3-5-sonnet-20241022"
+  max_tokens: 4096
+  auto_connect_mcp: true
+  mcp_server_host: "localhost"
+  mcp_server_port: 3000
+  log_level: "info"
+schema:
+  anthropic_api_key: password
+  model: list(claude-3-5-sonnet-20241022|claude-3-5-haiku-20241022|claude-3-opus-20240229)?
+  max_tokens: int(1000,8000)?
+  auto_connect_mcp: bool?
+  mcp_server_host: str?
+  mcp_server_port: port?
+  log_level: list(debug|info|warning|error)?
