@@ -45,13 +45,12 @@ RUN cd /tmp && npm install express socket.io cors --production && \
 COPY scripts/ /opt/scripts/
 COPY tcp-wrapper.js /tcp-wrapper.js
 COPY run.sh /run.sh
-COPY entrypoint.sh /entrypoint.sh
 
 # Copy dashboard files
 COPY dashboard/ /dashboard/
 
 # Set permissions
-RUN chmod +x /run.sh /entrypoint.sh /opt/scripts/*.sh
+RUN chmod +x /run.sh /opt/scripts/*.sh
 
 # Create necessary directories
 RUN mkdir -p /var/log /tmp/mcp-cache && \

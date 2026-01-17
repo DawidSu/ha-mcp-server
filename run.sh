@@ -1,5 +1,11 @@
 #!/usr/bin/with-contenv bashio
-set -e
+set -euo pipefail
+
+# Load common utilities
+if [[ -f "/opt/scripts/common.sh" ]]; then
+    source "/opt/scripts/common.sh"
+    common_init
+fi
 
 # Get configuration from addon options with validation
 CONFIG_PATH=$(bashio::config 'ha_config_path' || echo "/config")

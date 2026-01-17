@@ -1,6 +1,6 @@
 {
   "name": "ha-mcp-dashboard-api",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "API server for HA MCP Dashboard",
   "main": "server.js",
   "scripts": {
