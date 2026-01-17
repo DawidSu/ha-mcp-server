@@ -1,5 +1,5 @@
 name: Claude MCP Server
-version: "1.3.0"
+version: "1.3.1"
 slug: claude-mcp-server
 description: MCP Server für direkten Claude Zugriff auf Home Assistant Konfigurationen mit Web Dashboard
 url: https://github.com/DawidSu/ha-mcp-server
