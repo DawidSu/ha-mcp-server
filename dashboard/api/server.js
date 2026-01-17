@@ -50,11 +50,27 @@ function getDashboardHTML() {
         </ul>
         <p>Status: <span id="status">Checking...</span></p>
         <script>
-          fetch('/api/health').then(r => r.json()).then(data => {
-            document.getElementById('status').textContent = data.overall_status || 'OK';
-          }).catch(e => {
-            document.getElementById('status').textContent = 'Error: ' + e.message;
-          });
+          fetch('/api/health')
+            .then(response => {
+              console.log('Response status:', response.status);
+              console.log('Response headers:', response.headers);
+              return response.text();
+            })
+            .then(text => {
+              console.log('Raw response:', text);
+              try {
+                const data = JSON.parse(text);
+                document.getElementById('status').textContent = data.overall_status || 'OK';
+              } catch (parseError) {
+                console.error('JSON parse error:', parseError);
+                console.error('Raw text that failed to parse:', text);
+                document.getElementById('status').textContent = 'Parse Error: ' + parseError.message;
+              }
+            })
+            .catch(e => {
+              console.error('Fetch error:', e);
+              document.getElementById('status').textContent = 'Error: ' + e.message;
+            });
         </script>
       </body>
     </html>
