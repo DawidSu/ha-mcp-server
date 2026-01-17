@@ -42,18 +42,20 @@ function getDashboardHTML() {
         <p>MCP Dashboard API is running!</p>
         <h2>Available MCP Endpoints:</h2>
         <ul>
-          <li><a href="/api/health">/api/health</a> - MCP system health</li>
-          <li><a href="/api/metrics">/api/metrics</a> - MCP system metrics</li>
-          <li><a href="/api/cache">/api/cache</a> - MCP cache statistics</li>
-          <li><a href="/api/logs">/api/logs</a> - MCP server logs</li>
-          <li><a href="/api/dashboard">/api/dashboard</a> - Complete MCP dashboard data</li>
+          <li><a href="./api/health">api/health</a> - MCP system health</li>
+          <li><a href="./api/metrics">api/metrics</a> - MCP system metrics</li>
+          <li><a href="./api/cache">api/cache</a> - MCP cache statistics</li>
+          <li><a href="./api/logs">api/logs</a> - MCP server logs</li>
+          <li><a href="./api/dashboard">api/dashboard</a> - Complete MCP dashboard data</li>
         </ul>
         <p>Status: <span id="status">Checking...</span></p>
         <script>
-          fetch('/api/health')
+          // Use relative URL that works with Ingress
+          const apiUrl = window.location.pathname.endsWith('/') ? 'api/health' : './api/health';
+          fetch(apiUrl)
             .then(response => {
               console.log('Response status:', response.status);
-              console.log('Response headers:', response.headers);
+              console.log('Response URL:', response.url);
               return response.text();
             })
             .then(text => {
